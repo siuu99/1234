@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="잠만보가 하늘에서 떨어지는 잠만보 테트리스 게임">
+  <title>잠만보 테트리스 (Snorlax Tetris)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Jua&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Ambient Moon Glow Background -->
+  <div class="moon-bg"></div>
+
+  <div class="game-container">
+    <!-- Header -->
+    <header class="game-header">
+      <div class="header-badge">
+        <span class="badge-icon">💤</span>
+        <span>SNORLAX TETRIS</span>
+      </div>
+      <h1 class="game-title">
+        <span class="title-glow">잠만보 테트리스</span>
+      </h1>
+      <p class="game-subtitle">하늘에서 쿨쿨 자는 잠만보가 떨어집니다!</p>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="game-layout">
+      <!-- Left Info Panel (Score, Level, Lines, Controls) -->
+      <aside class="side-panel left-panel">
+        <div class="panel-card stat-card">
+          <div class="stat-label">점수</div>
+          <div class="stat-value" id="scoreDisplay">0</div>
+        </div>
+
+        <div class="panel-card stat-card">
+          <div class="stat-label">현재 레벨</div>
+          <div class="stat-value level-highlight" id="levelDisplay">1</div>
+        </div>
+
+        <div class="panel-card stat-card">
+          <div class="stat-label">제거한 줄 수</div>
+          <div class="stat-value" id="linesDisplay">0</div>
+        </div>
+
+        <!-- Controls Guide -->
+        <div class="panel-card guide-card">
+          <h2 class="card-title">잠만보 조작법</h2>
+          <ul class="control-list">
+            <li>
+              <span class="key-badge">◀</span>
+              <span class="key-badge">▶</span>
+              <span class="action-text">좌우 이동 (길게 누르면 연속)</span>
+            </li>
+            <li>
+              <span class="key-badge">▲</span>
+              <span class="action-text">잠만보 90° 회전</span>
+            </li>
+            <li>
+              <span class="key-badge">▼</span>
+              <span class="action-text">소프트 드롭 (빠른 낙하)</span>
+            </li>
+            <li>
+              <span class="key-badge space-badge">SPACE</span>
+              <span class="action-text">쿵! 하드 드롭 (즉시 착지)</span>
+            </li>
+            <li>
+              <span class="key-badge">P</span>
+              <span class="action-text">일시정지 / 계속하기</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Center Board Wrapper -->
+      <section class="board-wrapper">
+        <div class="canvas-container" id="boardContainer">
+          <canvas id="boardCanvas" width="300" height="600" aria-label="잠만보 테트리스 게임 보드"></canvas>
+          
+          <!-- Pause Overlay -->
+          <div class="board-overlay" id="pauseOverlay" style="display: none;">
+            <div class="overlay-content">
+              <div class="pause-icon">💤</div>
+              <h2 class="overlay-title">쿨쿨 잠자는 중</h2>
+              <p class="overlay-desc">게임이 일시정지되었습니다.</p>
+              <button class="btn btn-primary" id="overlayResumeBtn">계속하기</button>
+            </div>
+          </div>
+
+          <!-- Game Over Overlay -->
+          <div class="board-overlay" id="gameOverOverlay" style="display: none;">
+            <div class="overlay-content">
+              <div class="gameover-tag">SLEEP OVER</div>
+              <h2 class="overlay-title">게임 오버</h2>
+              <p class="gameover-sub">잠만보가 더 이상 누울 자리가 없어요!</p>
+              <div class="final-score-box">
+                <span class="final-score-label">최종 점수</span>
+                <span class="final-score-num" id="finalScoreDisplay">0</span>
+              </div>
+              <p class="final-stats" id="finalStatsDisplay">레벨 1 | 0줄 제거</p>
+              <button class="btn btn-restart" id="overlayRestartBtn">다시 시작하기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel (Next Snorlax, Buttons, Mode) -->
+      <aside class="side-panel right-panel">
+        <div class="panel-card next-card">
+          <div class="stat-label">다음 잠만보</div>
+          <div class="next-canvas-wrapper">
+            <canvas id="nextCanvas" width="120" height="120" aria-label="다음 잠만보 미리보기"></canvas>
+          </div>
+        </div>
+
+        <!-- Mode & Sound Options -->
+        <div class="panel-card options-card">
+          <button class="btn btn-option" id="modeToggleBtn">
+            <span class="btn-icon" id="modeBtnIcon">🐻</span>
+            <span id="modeBtnText">잠만보 단독 낙하 모드</span>
+          </button>
+          <button class="btn btn-option" id="soundToggleBtn">
+            <span class="btn-icon" id="soundBtnIcon">🔊</span>
+            <span id="soundBtnText">효과음: 켜짐</span>
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="panel-card action-card">
+          <button class="btn btn-action btn-pause" id="pauseBtn">
+            <span class="btn-icon" id="pauseBtnIcon">⏸</span>
+            <span id="pauseBtnText">일시정지</span>
+          </button>
+          <button class="btn btn-action btn-restart" id="restartBtn">
+            <span class="btn-icon">🔄</span>
+            <span>다시 시작</span>
+          </button>
+        </div>
+
+        <div class="panel-card tips-card">
+          <h2 class="card-title">점수 &amp; 규칙</h2>
+          <div class="rule-box">
+            <div class="rule-item"><span>1줄 제거</span> <strong>100점 × 레벨</strong></div>
+            <div class="rule-item"><span>2줄 제거</span> <strong>300점 × 레벨</strong></div>
+            <div class="rule-item"><span>3줄 제거</span> <strong>500점 × 레벨</strong></div>
+            <div class="rule-item"><span>4줄 제거 (테트리스!)</span> <strong>800점 × 레벨</strong></div>
+          </div>
+          <p class="level-rule">10줄 제거 시 레벨업 및 낙하 속도 증가 (이전 속도의 85%)</p>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="game-footer">
+      <span>브라우저의 다른 탭으로 이동하면 자동으로 일시정지됩니다.</span>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
