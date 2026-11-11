@@ -2,164 +2,201 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="description" content="잠만보가 하늘에서 떨어지는 잠만보 테트리스 게임">
-  <title>잠만보 테트리스 (Snorlax Tetris)</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2인용 불꽃 이모지(🔥) 테트리스 배틀</title>
+  <meta name="description" content="실시간 2인용 불 이모지(🔥) 테트리스 배틀 게임. 2줄 이상 클리어 시 상대방 하단에 공격 블록 추가!">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Jua&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Ambient Moon Glow Background -->
-  <div class="moon-bg"></div>
+  <!-- 배경 글로우 & 그리드 효과 -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow p1-glow"></div>
+  <div class="bg-glow p2-glow"></div>
 
-  <div class="game-container">
-    <!-- Header -->
-    <header class="game-header">
-      <div class="header-badge">
-        <span class="badge-icon">💤</span>
-        <span>SNORLAX TETRIS</span>
-      </div>
+  <!-- 레이저 공격 효과를 위한 오버레이 캔버스 -->
+  <canvas id="attack-fx-canvas"></canvas>
+
+  <header class="game-header">
+    <div class="logo-container">
       <h1 class="game-title">
-        <span class="title-glow">잠만보 테트리스</span>
+        <span class="neon-blue">🔥 FIRE</span> 
+        <span class="vs-badge">VS</span> 
+        <span class="neon-orange">TETRIS 🔥</span>
       </h1>
-      <p class="game-subtitle">하늘에서 쿨쿨 자는 잠만보가 떨어집니다!</p>
-    </header>
+      <p class="game-subtitle">타오르는 불 이모지(🔥) 2인용 대전 • 2줄 이상 완성 시 상대방 하단 공격!</p>
+    </div>
+    <div class="top-controls">
+      <button id="btn-pause" class="btn btn-secondary" title="일시정지 (P)">
+        <span class="btn-icon">⏸</span> <span class="btn-text">일시정지</span>
+      </button>
+      <button id="btn-restart" class="btn btn-danger" title="게임 다시 시작">
+        <span class="btn-icon">🔄</span> <span class="btn-text">다시 시작</span>
+      </button>
+      <button id="btn-sound" class="btn btn-icon-only" title="소리 켜기/끄기 (M)">
+        <span id="sound-icon">🔊</span>
+      </button>
+    </div>
+  </header>
 
-    <!-- Main Game Area -->
-    <main class="game-layout">
-      <!-- Left Info Panel (Score, Level, Lines, Controls) -->
-      <aside class="side-panel left-panel">
-        <div class="panel-card stat-card">
-          <div class="stat-label">점수</div>
-          <div class="stat-value" id="scoreDisplay">0</div>
+  <main class="battle-arena">
+    <!-- PLAYER 1 AREA -->
+    <section class="player-container p1-side" id="p1-container">
+      <div class="player-header">
+        <div class="player-tag p1-tag">PLAYER 1</div>
+        <div class="player-status" id="p1-status">READY</div>
+      </div>
+
+      <div class="player-board-wrapper">
+        <!-- P1 메인 게임 캔버스 -->
+        <div class="canvas-box">
+          <canvas id="p1-canvas" width="250" height="500"></canvas>
+          <div class="combo-banner" id="p1-attack-banner">ATTACK! +2 LINES</div>
         </div>
 
-        <div class="panel-card stat-card">
-          <div class="stat-label">현재 레벨</div>
-          <div class="stat-value level-highlight" id="levelDisplay">1</div>
-        </div>
-
-        <div class="panel-card stat-card">
-          <div class="stat-label">제거한 줄 수</div>
-          <div class="stat-value" id="linesDisplay">0</div>
-        </div>
-
-        <!-- Controls Guide -->
-        <div class="panel-card guide-card">
-          <h2 class="card-title">잠만보 조작법</h2>
-          <ul class="control-list">
-            <li>
-              <span class="key-badge">◀</span>
-              <span class="key-badge">▶</span>
-              <span class="action-text">좌우 이동 (길게 누르면 연속)</span>
-            </li>
-            <li>
-              <span class="key-badge">▲</span>
-              <span class="action-text">잠만보 90° 회전</span>
-            </li>
-            <li>
-              <span class="key-badge">▼</span>
-              <span class="action-text">소프트 드롭 (빠른 낙하)</span>
-            </li>
-            <li>
-              <span class="key-badge space-badge">SPACE</span>
-              <span class="action-text">쿵! 하드 드롭 (즉시 착지)</span>
-            </li>
-            <li>
-              <span class="key-badge">P</span>
-              <span class="action-text">일시정지 / 계속하기</span>
-            </li>
-          </ul>
-        </div>
-      </aside>
-
-      <!-- Center Board Wrapper -->
-      <section class="board-wrapper">
-        <div class="canvas-container" id="boardContainer">
-          <canvas id="boardCanvas" width="300" height="600" aria-label="잠만보 테트리스 게임 보드"></canvas>
-          
-          <!-- Pause Overlay -->
-          <div class="board-overlay" id="pauseOverlay" style="display: none;">
-            <div class="overlay-content">
-              <div class="pause-icon">💤</div>
-              <h2 class="overlay-title">쿨쿨 잠자는 중</h2>
-              <p class="overlay-desc">게임이 일시정지되었습니다.</p>
-              <button class="btn btn-primary" id="overlayResumeBtn">계속하기</button>
-            </div>
+        <!-- P1 사이드 패널 (점수, 넥스트) -->
+        <div class="side-panel">
+          <div class="panel-card next-card">
+            <span class="panel-label">NEXT</span>
+            <canvas id="p1-next-canvas" width="90" height="90"></canvas>
           </div>
-
-          <!-- Game Over Overlay -->
-          <div class="board-overlay" id="gameOverOverlay" style="display: none;">
-            <div class="overlay-content">
-              <div class="gameover-tag">SLEEP OVER</div>
-              <h2 class="overlay-title">게임 오버</h2>
-              <p class="gameover-sub">잠만보가 더 이상 누울 자리가 없어요!</p>
-              <div class="final-score-box">
-                <span class="final-score-label">최종 점수</span>
-                <span class="final-score-num" id="finalScoreDisplay">0</span>
-              </div>
-              <p class="final-stats" id="finalStatsDisplay">레벨 1 | 0줄 제거</p>
-              <button class="btn btn-restart" id="overlayRestartBtn">다시 시작하기</button>
+          <div class="panel-card stats-card">
+            <div class="stat-item">
+              <span class="stat-label">SCORE</span>
+              <span class="stat-value p1-color" id="p1-score">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">LINES</span>
+              <span class="stat-value" id="p1-lines">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">ATTACK</span>
+              <span class="stat-value text-red" id="p1-attacks-sent">0</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Right Panel (Next Snorlax, Buttons, Mode) -->
-      <aside class="side-panel right-panel">
-        <div class="panel-card next-card">
-          <div class="stat-label">다음 잠만보</div>
-          <div class="next-canvas-wrapper">
-            <canvas id="nextCanvas" width="120" height="120" aria-label="다음 잠만보 미리보기"></canvas>
+      <!-- P1 조작법 안내 -->
+      <div class="controls-guide p1-controls">
+        <div class="guide-title">P1 조작키</div>
+        <div class="key-grid">
+          <div class="key-item"><kbd>W</kbd> 회전</div>
+          <div class="key-item"><kbd>A</kbd><kbd>D</kbd> 이동</div>
+          <div class="key-item"><kbd>S</kbd> 소프트 드롭</div>
+          <div class="key-item key-highlight"><kbd>L-Shift</kbd> 하드 드롭</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 중앙 VS 디바이더 및 경기 정보 -->
+    <div class="center-divider">
+      <div class="vs-circle">VS</div>
+      <div class="match-timer-box">
+        <span class="timer-label">TIME</span>
+        <span class="timer-value" id="match-timer">00:00</span>
+      </div>
+      <div class="rule-hint-box">
+        <div class="rule-icon">⚡</div>
+        <div class="rule-text">
+          <strong>2줄 이상 클리어!</strong><br>
+          마지막 채워진 칸이 제거된 방해 블록을 상대방 바닥에 추가합니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYER 2 AREA -->
+    <section class="player-container p2-side" id="p2-container">
+      <div class="player-header">
+        <div class="player-tag p2-tag">PLAYER 2</div>
+        <div class="player-status" id="p2-status">READY</div>
+      </div>
+
+      <div class="player-board-wrapper">
+        <!-- P2 메인 게임 캔버스 -->
+        <div class="canvas-box">
+          <canvas id="p2-canvas" width="250" height="500"></canvas>
+          <div class="combo-banner" id="p2-attack-banner">ATTACK! +2 LINES</div>
+        </div>
+
+        <!-- P2 사이드 패널 (점수, 넥스트) -->
+        <div class="side-panel">
+          <div class="panel-card next-card">
+            <span class="panel-label">NEXT</span>
+            <canvas id="p2-next-canvas" width="90" height="90"></canvas>
+          </div>
+          <div class="panel-card stats-card">
+            <div class="stat-item">
+              <span class="stat-label">SCORE</span>
+              <span class="stat-value p2-color" id="p2-score">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">LINES</span>
+              <span class="stat-value" id="p2-lines">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">ATTACK</span>
+              <span class="stat-value text-red" id="p2-attacks-sent">0</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Mode & Sound Options -->
-        <div class="panel-card options-card">
-          <button class="btn btn-option" id="modeToggleBtn">
-            <span class="btn-icon" id="modeBtnIcon">🐻</span>
-            <span id="modeBtnText">잠만보 단독 낙하 모드</span>
-          </button>
-          <button class="btn btn-option" id="soundToggleBtn">
-            <span class="btn-icon" id="soundBtnIcon">🔊</span>
-            <span id="soundBtnText">효과음: 켜짐</span>
-          </button>
+      <!-- P2 조작법 안내 -->
+      <div class="controls-guide p2-controls">
+        <div class="guide-title">P2 조작키</div>
+        <div class="key-grid">
+          <div class="key-item"><kbd>▲</kbd> 회전</div>
+          <div class="key-item"><kbd>◀</kbd><kbd>▶</kbd> 이동</div>
+          <div class="key-item"><kbd>▼</kbd> 소프트 드롭</div>
+          <div class="key-item key-highlight"><kbd>Space</kbd> 하드 드롭</div>
         </div>
+      </div>
+    </section>
+  </main>
 
-        <!-- Action Buttons -->
-        <div class="panel-card action-card">
-          <button class="btn btn-action btn-pause" id="pauseBtn">
-            <span class="btn-icon" id="pauseBtnIcon">⏸</span>
-            <span id="pauseBtnText">일시정지</span>
-          </button>
-          <button class="btn btn-action btn-restart" id="restartBtn">
-            <span class="btn-icon">🔄</span>
-            <span>다시 시작</span>
-          </button>
-        </div>
-
-        <div class="panel-card tips-card">
-          <h2 class="card-title">점수 &amp; 규칙</h2>
-          <div class="rule-box">
-            <div class="rule-item"><span>1줄 제거</span> <strong>100점 × 레벨</strong></div>
-            <div class="rule-item"><span>2줄 제거</span> <strong>300점 × 레벨</strong></div>
-            <div class="rule-item"><span>3줄 제거</span> <strong>500점 × 레벨</strong></div>
-            <div class="rule-item"><span>4줄 제거 (테트리스!)</span> <strong>800점 × 레벨</strong></div>
-          </div>
-          <p class="level-rule">10줄 제거 시 레벨업 및 낙하 속도 증가 (이전 속도의 85%)</p>
-        </div>
-      </aside>
-    </main>
-
-    <!-- Footer -->
-    <footer class="game-footer">
-      <span>브라우저의 다른 탭으로 이동하면 자동으로 일시정지됩니다.</span>
-    </footer>
+  <!-- 일시정지 오버레이 모달 -->
+  <div class="modal-overlay hidden" id="pause-modal">
+    <div class="modal-card">
+      <h2 class="modal-title">GAME PAUSED</h2>
+      <p class="modal-desc">게임이 일시정지 되었습니다.</p>
+      <div class="modal-actions">
+        <button id="modal-resume-btn" class="btn btn-primary">계속하기</button>
+        <button id="modal-restart-btn" class="btn btn-danger">다시 시작</button>
+      </div>
+    </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- 게임 오버 / 승리 모달 -->
+  <div class="modal-overlay hidden" id="gameover-modal">
+    <div class="modal-card gameover-card">
+      <div class="trophy-icon" id="winner-trophy">🏆</div>
+      <h2 class="modal-title winner-title" id="winner-title">PLAYER 1 WIN!</h2>
+      <p class="modal-desc" id="gameover-reason">Player 2의 블록이 상단에 도달했습니다.</p>
+      
+      <div class="match-summary">
+        <div class="summary-col p1-summary">
+          <div class="sum-name">Player 1</div>
+          <div class="sum-score" id="sum-p1-score">0</div>
+          <div class="sum-lines" id="sum-p1-lines">0 lines</div>
+        </div>
+        <div class="summary-divider">VS</div>
+        <div class="summary-col p2-summary">
+          <div class="sum-name">Player 2</div>
+          <div class="sum-score" id="sum-p2-score">0</div>
+          <div class="sum-lines" id="sum-p2-lines">0 lines</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="modal-play-again-btn" class="btn btn-primary btn-large">다시 대결하기 (Restart)</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="tetris.js"></script>
 </body>
 </html>
